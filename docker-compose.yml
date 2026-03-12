@@ -287,7 +287,7 @@ services:
       DOMAIN: "${TM_DOMAIN}"
       API_TOKEN: "${API_TOKEN}"
       BASIC_AUTH_FILE: /etc/nginx/secrets/teslamate.htpasswd
-      TLS_MODE: "${TLS_MODE}"
+      TLS_MODE: "${EDGE_TLS_MODE}"
       NGINX_CLIENT_MAX_BODY_SIZE: "${NGINX_CLIENT_MAX_BODY_SIZE}"
       NGINX_RATE_LIMIT: "${NGINX_RATE_LIMIT}"
       NGINX_RATE_LIMIT_BURST: "${NGINX_RATE_LIMIT_BURST}"
@@ -317,6 +317,7 @@ services:
       - ./runtime/logs/nginx:/var/log/nginx
     networks:
       - internal
+      - public-edge
     mem_limit: 256m
     cpus: 0.5
     logging:
@@ -328,3 +329,6 @@ services:
 networks:
   internal:
     driver: bridge
+  public-edge:
+    name: "${PUBLIC_EDGE_NETWORK}"
+    external: true

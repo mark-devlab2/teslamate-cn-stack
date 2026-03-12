@@ -12,21 +12,26 @@ if [ ! -f "$BASIC_AUTH_FILE" ]; then
   exit 1
 fi
 
-if [ "${TLS_MODE:-manual}" = "manual" ]; then
-  [ -f /etc/nginx/tls/fullchain.pem ] || {
-    echo "missing /etc/nginx/tls/fullchain.pem for manual TLS mode" >&2
-    exit 1
-  }
-  [ -f /etc/nginx/tls/privkey.pem ] || {
-    echo "missing /etc/nginx/tls/privkey.pem for manual TLS mode" >&2
-    exit 1
-  }
-else
-  if [ ! -f /etc/nginx/tls/fullchain.pem ] || [ ! -f /etc/nginx/tls/privkey.pem ]; then
-    openssl req -x509 -nodes -newkey rsa:2048 \
-      -keyout /etc/nginx/tls/privkey.pem \
-      -out /etc/nginx/tls/fullchain.pem \
-      -days 1 \
-      -subj "/CN=${DOMAIN}" >/dev/null 2>&1
-  fi
-fi
+case "${TLS_MODE:-manual}" in
+  offload)
+    ;;
+  manual)
+    [ -f /etc/nginx/tls/fullchain.pem ] || {
+      echo "missing /etc/nginx/tls/fullchain.pem for manual TLS mode" >&2
+      exit 1
+    }
+    [ -f /etc/nginx/tls/privkey.pem ] || {
+      echo "missing /etc/nginx/tls/privkey.pem for manual TLS mode" >&2
+      exit 1
+    }
+    ;;
+  *)
+    if [ ! -f /etc/nginx/tls/fullchain.pem ] || [ ! -f /etc/nginx/tls/privkey.pem ]; then
+      openssl req -x509 -nodes -newkey rsa:2048 \
+        -keyout /etc/nginx/tls/privkey.pem \
+        -out /etc/nginx/tls/fullchain.pem \
+        -days 1 \
+        -subj "/CN=${DOMAIN}" >/dev/null 2>&1
+    fi
+    ;;
+esac
