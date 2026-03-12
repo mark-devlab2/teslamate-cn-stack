@@ -1,0 +1,99 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 18,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "folderUID": "Nr4ofiDZk",
+        "includeVars": false,
+        "keepTime": false,
+        "maxItems": 100,
+        "query": "",
+        "showFolderNames": false,
+        "showHeadings": false,
+        "showRecentlyViewed": true,
+        "showSearch": true,
+        "showStarred": true,
+        "tags": []
+      },
+      "pluginVersion": "12.4.0",
+      "title": "常用仪表盘",
+      "type": "dashlist"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 18,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "code": {
+          "language": "markdown",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# TeslaMate 中文总览\n\n- 推荐先看 `01 总览`、`02 行程轨迹`、`03 到访地点`、`04 充电记录`\n- 地图底图统一走 `/tiles/` 同域代理，便于在中国网络环境下切换上游\n- `teslamateapi` 默认只读，车辆命令默认关闭\n- 如果发现历史地址为空，先执行备份，再运行 `scripts/fix-addresses.sh`\n\n默认时区为 `Asia/Shanghai`，图表按浏览器时区展示。",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.4.0",
+      "title": "使用提示",
+      "type": "text"
+    }
+  ],
+  "schemaVersion": 42,
+  "tags": [
+    "teslamate",
+    "cn"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {
+    "hidden": false
+  },
+  "timezone": "browser",
+  "title": "首页总览",
+  "uid": "teslamate-cn-home",
+  "version": 1,
+  "weekStart": ""
+}
+

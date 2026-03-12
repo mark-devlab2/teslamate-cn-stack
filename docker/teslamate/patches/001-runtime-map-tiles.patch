@@ -1,0 +1,24 @@
+--- a/assets/js/hooks.js
++++ b/assets/js/hooks.js
+@@ -145,7 +145,10 @@
+   const isDarkMode =
+     document.documentElement.getAttribute("data-theme") === "dark";
+ 
+-  const osm = new TileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
++  const baseTileUrl =
++    window.TM_MAP_TILE_URL || "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
++
++  const osm = new TileLayer(baseTileUrl, {
+     maxZoom: 19,
+     className: isDarkMode ? "dark-mode-tiles" : "",
+   });
+--- a/lib/teslamate_web/templates/layout/root.html.heex
++++ b/lib/teslamate_web/templates/layout/root.html.heex
+@@ -45,6 +45,7 @@
+     <%= csrf_meta_tag() %>
+     <script>
+       window.LIVE_PATH = "<%= Routes.static_path(@conn, "/live") %>";
++      window.TM_MAP_TILE_URL = "<%= System.get_env("TM_MAP_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png") %>";
+       // Apply theme immediately to prevent flash
+       (function() {
+         const themeMode = document.documentElement.getAttribute('data-theme-mode');

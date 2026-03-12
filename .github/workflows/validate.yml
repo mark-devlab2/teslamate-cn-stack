@@ -1,0 +1,17 @@
+name: Validate Aliyun Release Contract
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: mark-devlab2/aliyun-deploy-platform/.github/workflows/validate-service.yml@main
+    with:
+      build_config_path: .deploy/build.yaml
+      platform_repo: mark-devlab2/aliyun-deploy-platform
+      platform_ref: main
+

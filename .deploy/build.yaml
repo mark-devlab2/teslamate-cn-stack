@@ -1,0 +1,78 @@
+{
+  "serviceId": "teslamate-cn",
+  "runtime": {
+    "type": "container-mirror",
+    "version": "2026.03"
+  },
+  "registries": {
+    "acr": {
+      "host": "crpi-vbmaa8d6ek5k7rjt.cn-beijing.personal.cr.aliyuncs.com",
+      "namespace": "himark",
+      "enabled": true
+    }
+  },
+  "test": {
+    "run": "sh test/validate.sh"
+  },
+  "images": [
+    {
+      "name": "edge",
+      "image": "teslamate-cn-edge",
+      "context": ".",
+      "dockerfile": "docker/nginx/Dockerfile"
+    },
+    {
+      "name": "teslamate",
+      "image": "teslamate-cn-teslamate",
+      "context": ".",
+      "dockerfile": "docker/teslamate/Dockerfile"
+    },
+    {
+      "name": "grafana",
+      "image": "teslamate-cn-grafana",
+      "context": ".",
+      "dockerfile": "docker/grafana-cn/Dockerfile"
+    },
+    {
+      "name": "mosquitto",
+      "image": "teslamate-cn-mosquitto",
+      "context": ".",
+      "dockerfile": "docker/mosquitto/Dockerfile"
+    },
+    {
+      "name": "teslamateapi",
+      "image": "teslamate-cn-teslamateapi",
+      "context": ".",
+      "dockerfile": "docker/teslamateapi/Dockerfile"
+    },
+    {
+      "name": "cn-geocoder",
+      "image": "teslamate-cn-cn-geocoder",
+      "context": ".",
+      "dockerfile": "docker/cn-geocoder/Dockerfile"
+    },
+    {
+      "name": "tile-proxy",
+      "image": "teslamate-cn-tile-proxy",
+      "context": ".",
+      "dockerfile": "docker/tile-proxy/Dockerfile"
+    },
+    {
+      "name": "postgres",
+      "image": "teslamate-cn-postgres",
+      "context": ".",
+      "dockerfile": "docker/postgres/Dockerfile"
+    },
+    {
+      "name": "acme",
+      "image": "teslamate-cn-acme",
+      "context": ".",
+      "dockerfile": "docker/acme/Dockerfile"
+    }
+  ],
+  "deploy": {
+    "defaultTarget": "full",
+    "productionRegistry": "acr"
+  }
+}
+

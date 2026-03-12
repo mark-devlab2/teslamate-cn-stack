@@ -1,0 +1,330 @@
+services:
+  postgres:
+    image: "${POSTGRES_IMAGE:-teslamate-cn-postgres:local}"
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      TZ: "${TZ}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    volumes:
+      - ./runtime/postgres:/var/lib/postgresql/data
+    networks:
+      - internal
+    mem_limit: 1g
+    cpus: 1.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mosquitto:
+    image: "${MOSQUITTO_IMAGE:-teslamate-cn-mosquitto:local}"
+    build:
+      context: .
+      dockerfile: docker/mosquitto/Dockerfile
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -p 1883 -u \"$MOSQUITTO_USERNAME\" -P \"$MOSQUITTO_PASSWORD\" -t '$$SYS/broker/version' -C 1 -W 3 >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - ./runtime/mosquitto/data:/mosquitto/data
+      - ./runtime/mosquitto/log:/mosquitto/log
+    networks:
+      - internal
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cn-geocoder:
+    image: "${CN_GEOCODER_IMAGE:-teslamate-cn-cn-geocoder:local}"
+    build:
+      context: .
+      dockerfile: docker/cn-geocoder/Dockerfile
+    env_file:
+      - .env
+    environment:
+      GEOCODER_DB_PATH: /data/geocoder-cache.sqlite3
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3).read()\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    volumes:
+      - ./runtime/cn-geocoder:/data
+    networks:
+      - internal
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  tile-proxy:
+    image: "${TILE_PROXY_IMAGE:-teslamate-cn-tile-proxy:local}"
+    build:
+      context: .
+      dockerfile: docker/tile-proxy/Dockerfile
+    env_file:
+      - .env
+    environment:
+      TILE_CACHE_DIR: /data/cache
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3).read()\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    volumes:
+      - ./runtime/tile-cache:/data
+    networks:
+      - internal
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  teslamate:
+    image: "${TESLAMATE_IMAGE:-teslamate-cn-teslamate:local}"
+    build:
+      context: .
+      dockerfile: docker/teslamate/Dockerfile
+    env_file:
+      - .env
+    environment:
+      TZ: "${TZ}"
+      DATABASE_HOST: postgres
+      DATABASE_NAME: "${POSTGRES_DB}"
+      DATABASE_USER: "${POSTGRES_USER}"
+      DATABASE_PASS: "${POSTGRES_PASSWORD}"
+      MQTT_HOST: mosquitto
+      MQTT_USERNAME: "${MOSQUITTO_USERNAME}"
+      MQTT_PASSWORD: "${MOSQUITTO_PASSWORD}"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      SECRET_KEY_BASE: "${SECRET_KEY_BASE}"
+      SIGNING_SALT: "${SIGNING_SALT}"
+      CHECK_ORIGIN: "${CHECK_ORIGIN}"
+      VIRTUAL_HOST: "${TM_DOMAIN}"
+      URL_PATH: /
+      TZDATA_DIR: /tmp
+      TM_MAP_TILE_URL: "${TM_MAP_TILE_URL}"
+      TM_GEOCODER_BASE_URL: "${TM_GEOCODER_BASE_URL}"
+      TESLA_AUTH_HOST: "${TESLA_AUTH_HOST}"
+      TESLA_API_HOST: "${TESLA_API_HOST}"
+      TESLA_WSS_HOST: "${TESLA_WSS_HOST}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+      cn-geocoder:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:4000/health_check >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+    volumes:
+      - ./runtime/teslamate/import:/opt/app/import
+      - ./runtime/teslamate/backup:/opt/app/backup
+    networks:
+      - internal
+    mem_limit: 1g
+    cpus: 1.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  teslamateapi:
+    image: "${TESLAMATEAPI_IMAGE:-teslamate-cn-teslamateapi:local}"
+    build:
+      context: .
+      dockerfile: docker/teslamateapi/Dockerfile
+    env_file:
+      - .env
+    environment:
+      TZ: "${TZ}"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      DATABASE_HOST: postgres
+      DATABASE_NAME: "${POSTGRES_DB}"
+      DATABASE_USER: "${POSTGRES_USER}"
+      DATABASE_PASS: "${POSTGRES_PASSWORD}"
+      MQTT_HOST: mosquitto
+      MQTT_USERNAME: "${MOSQUITTO_USERNAME}"
+      MQTT_PASSWORD: "${MOSQUITTO_PASSWORD}"
+      MQTT_NAMESPACE: "${MQTT_NAMESPACE}"
+      TESLAMATE_HOST: teslamate
+      TESLAMATE_PORT: 4000
+      API_TOKEN: "${API_TOKEN}"
+      API_TOKEN_DISABLE: "${TESLAMATEAPI_API_TOKEN_DISABLE}"
+      ENABLE_COMMANDS: "${TESLAMATEAPI_ENABLE_COMMANDS}"
+      TESLA_API_HOST: "${TESLA_API_HOST}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+      teslamate:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/api/readyz >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - internal
+    mem_limit: 512m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  grafana:
+    image: "${GRAFANA_IMAGE:-teslamate-cn-grafana:local}"
+    build:
+      context: .
+      dockerfile: docker/grafana-cn/Dockerfile
+    env_file:
+      - .env
+    environment:
+      TZ: "${TZ}"
+      DATABASE_HOST: postgres
+      DATABASE_NAME: "${POSTGRES_DB}"
+      DATABASE_USER: "${POSTGRES_USER}"
+      DATABASE_PASS: "${POSTGRES_PASSWORD}"
+      GF_SERVER_ROOT_URL: "${GRAFANA_URL}"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD}"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./runtime/grafana:/var/lib/grafana
+    networks:
+      - internal
+    mem_limit: 512m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  acme:
+    image: "${ACME_IMAGE:-teslamate-cn-acme:local}"
+    build:
+      context: .
+      dockerfile: docker/acme/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DOMAIN: "${TM_DOMAIN}"
+      ACME_EMAIL: "${ACME_EMAIL}"
+      TLS_MODE: "${TLS_MODE}"
+      ACME_CA_SERVER: "${ACME_CA_SERVER}"
+      ACME_STAGING: "${ACME_STAGING}"
+    restart: unless-stopped
+    volumes:
+      - ./runtime/acme:/acme.sh
+      - ./runtime/certs:/certs
+      - ./runtime/acme-webroot:/var/www/acme
+    networks:
+      - internal
+    mem_limit: 128m
+    cpus: 0.25
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: "${EDGE_IMAGE:-teslamate-cn-edge:local}"
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DOMAIN: "${TM_DOMAIN}"
+      API_TOKEN: "${API_TOKEN}"
+      BASIC_AUTH_FILE: /etc/nginx/secrets/teslamate.htpasswd
+      TLS_MODE: "${TLS_MODE}"
+      NGINX_CLIENT_MAX_BODY_SIZE: "${NGINX_CLIENT_MAX_BODY_SIZE}"
+      NGINX_RATE_LIMIT: "${NGINX_RATE_LIMIT}"
+      NGINX_RATE_LIMIT_BURST: "${NGINX_RATE_LIMIT_BURST}"
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      teslamate:
+        condition: service_healthy
+      teslamateapi:
+        condition: service_healthy
+      grafana:
+        condition: service_started
+      tile-proxy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/nginx-healthz >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - ./runtime/certs:/etc/nginx/tls
+      - ./runtime/acme-webroot:/var/www/acme
+      - ./runtime/nginx/htpasswd:/etc/nginx/secrets/teslamate.htpasswd:ro
+      - ./runtime/logs/nginx:/var/log/nginx
+    networks:
+      - internal
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  internal:
+    driver: bridge

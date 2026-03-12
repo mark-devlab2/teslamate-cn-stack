@@ -1,0 +1,82 @@
+--- a/lib/teslamate/http.ex
++++ b/lib/teslamate/http.ex
+@@ -2,18 +2,16 @@
+   require Logger
+ 
+   def pools do
+-    nominatim_proxy =
+-      case build_proxy_opts_from_env("NOMINATIM_PROXY") do
+-        {:ok, opts} -> opts
+-        {:none, _} -> []
+-        {:error, _} -> []
+-      end
++    geocoder_base_url =
++      System.get_env("TM_GEOCODER_BASE_URL", "https://nominatim.openstreetmap.org")
+ 
++    geocoder_proxy = build_proxy_opts_from_envs(["TM_GEOCODER_PROXY", "NOMINATIM_PROXY"])
++
+     %{
+       System.get_env("TESLA_API_HOST", "https://owner-api.teslamotors.com") => [
+         size: System.get_env("TESLA_API_POOL_SIZE", "10") |> String.to_integer()
+       ],
+-      "https://nominatim.openstreetmap.org" => [size: 3] ++ nominatim_proxy,
++      geocoder_base_url => [size: 3] ++ geocoder_proxy,
+       "https://api.github.com" => [size: 1],
+       :default => [size: System.get_env("HTTP_POOL_SIZE", "5") |> String.to_integer()]
+     }
+@@ -64,6 +62,16 @@
+     end
+   end
+ 
++  defp build_proxy_opts_from_envs(vars) when is_list(vars) do
++    Enum.reduce_while(vars, [], fn var, _acc ->
++      case build_proxy_opts_from_env(var) do
++        {:ok, opts} -> {:halt, opts}
++        {:none, _} -> {:cont, []}
++        {:error, _} -> {:cont, []}
++      end
++    end)
++  end
++
+   def child_spec(_arg) do
+     Finch.child_spec(name: __MODULE__, pools: pools())
+   end
+--- a/lib/teslamate/locations/geocoder.ex
++++ b/lib/teslamate/locations/geocoder.ex
+@@ -1,16 +1,19 @@
+ defmodule TeslaMate.Locations.Geocoder do
+-  use Tesla, only: [:get]
+-
+   @version Mix.Project.config()[:version]
+ 
+-  adapter Tesla.Adapter.Finch, name: TeslaMate.HTTP, receive_timeout: 30_000
++  alias TeslaMate.Locations.Address
+ 
+-  plug Tesla.Middleware.BaseUrl, "https://nominatim.openstreetmap.org"
+-  plug Tesla.Middleware.Headers, [{"user-agent", "TeslaMate/#{@version}"}]
+-  plug Tesla.Middleware.JSON
+-  plug Tesla.Middleware.Logger, debug: true, log_level: &log_level/1
++  defp client do
++    middleware = [
++      {Tesla.Middleware.BaseUrl,
++       System.get_env("TM_GEOCODER_BASE_URL", "https://nominatim.openstreetmap.org")},
++      {Tesla.Middleware.Headers, [{"user-agent", "TeslaMate/#{@version}"}]},
++      Tesla.Middleware.JSON,
++      {Tesla.Middleware.Logger, debug: true, log_level: &log_level/1}
++    ]
+ 
+-  alias TeslaMate.Locations.Address
++    Tesla.client(middleware, {Tesla.Adapter.Finch, name: TeslaMate.HTTP, receive_timeout: 30_000})
++  end
+ 
+   def reverse_lookup(lat, lon, lang \\ "en") do
+     opts = [
+@@ -64,7 +67,7 @@
+   end
+ 
+   defp query(url, lang, params) do
+-    case get(url, query: params, headers: [{"Accept-Language", lang}]) do
++    case Tesla.get(client(), url, query: params, headers: [{"Accept-Language", lang}]) do
+       {:ok, %Tesla.Env{status: 200, body: body}} -> {:ok, body}
+       {:ok, %Tesla.Env{body: %{"error" => reason}}} -> {:error, reason}
+       {:ok, %Tesla.Env{} = env} -> {:error, reason: "Unexpected response", env: env}
