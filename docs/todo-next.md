@@ -32,3 +32,9 @@
 - [ ] 执行一次 `scripts/backup.sh`
 - [ ] 记录本次上线镜像 tag 和备份目录
 - [ ] 将生产 `.env`、平台 `service.env`、证书文件、htpasswd 纳入受控备份
+
+## 平台与监控仓整理
+
+- [ ] 运行 `scripts/export-integration-patches.sh`
+- [ ] 审阅 `artifacts/integration-patches/*.patch`
+- [ ] 在 `aliyun-deploy-platform` 和 `openclaw-main-config` 分别决定是否建独立分支提交

@@ -5,3 +5,4 @@ __pycache__/
 runtime/**
 !runtime/.keep
 backups/
+artifacts/
