@@ -17,4 +17,7 @@ password_file /mosquitto/config/passwordfile
 log_dest stdout
 EOF
 
+chown -R mosquitto:mosquitto /mosquitto/config /mosquitto/data /mosquitto/log
+chmod 640 /mosquitto/config/passwordfile /mosquitto/config/mosquitto.conf
+
 exec "$@"

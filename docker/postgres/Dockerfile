@@ -1,2 +1,1 @@
-FROM postgres:18-trixie
-
+FROM postgres:17-trixie
