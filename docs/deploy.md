@@ -63,6 +63,8 @@ teslamate-cn-stack/
 
 1. 新建仓库并推送本目录内容。
 2. 复制 `.env.example` 为 `.env` 并填写真实值。
+   - 可先运行 `scripts/generate-env.sh`
+   - 再运行 `scripts/check-env.sh`
 3. 运行 `scripts/init.sh prepare` 生成运行目录与 Basic Auth 文件。
 4. 本地验证配置：
    - `sh test/validate.sh`
@@ -82,6 +84,7 @@ teslamate-cn-stack/
    - `ACR_USERNAME`
    - `ACR_PASSWORD`
 3. 在平台仓 `runtime/teslamate-cn/service.env` 填入生产 `.env` 等效值。
+   - 可直接运行 `scripts/render-platform-env.sh`
 4. 合并平台仓与监控仓的 TeslaMate 变更。
 5. `push main` 触发：
    - GitHub Actions 构建镜像

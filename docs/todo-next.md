@@ -2,6 +2,8 @@
 
 ## 必填配置
 
+- [ ] 运行 `scripts/generate-env.sh` 初始化生产 `.env`
+- [ ] 运行 `scripts/check-env.sh` 确认 `.env` 中已无占位值
 - [ ] 填写 Tesla 账号接入信息并完成首次网页登录
 - [ ] 配置 `car.himark.me` DNS `A` 记录到阿里云服务器
 - [ ] 选择证书模式：
@@ -35,6 +37,7 @@
 
 ## 平台与监控仓整理
 
+- [ ] 运行 `scripts/render-platform-env.sh`
 - [ ] 运行 `scripts/export-integration-patches.sh`
 - [ ] 审阅 `artifacts/integration-patches/*.patch`
 - [ ] 在 `aliyun-deploy-platform` 和 `openclaw-main-config` 分别决定是否建独立分支提交

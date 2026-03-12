@@ -10,7 +10,10 @@ for f in \
   "$ROOT_DIR/docs/deploy.md" \
   "$ROOT_DIR/docs/upgrade.md" \
   "$ROOT_DIR/docs/rollback.md" \
-  "$ROOT_DIR/docs/troubleshooting.md"
+  "$ROOT_DIR/docs/troubleshooting.md" \
+  "$ROOT_DIR/scripts/generate-env.sh" \
+  "$ROOT_DIR/scripts/check-env.sh" \
+  "$ROOT_DIR/scripts/render-platform-env.sh"
 do
   [ -s "$f" ] || {
     echo "missing required file: $f" >&2
@@ -57,5 +60,8 @@ touch "$ROOT_DIR/runtime/nginx/htpasswd"
 docker compose --env-file "$ROOT_DIR/.env.validation" -f "$ROOT_DIR/docker-compose.yml" config >/dev/null
 
 python3 -m json.tool "$ROOT_DIR/.deploy/build.yaml" >/dev/null
+sh -n "$ROOT_DIR/scripts/generate-env.sh"
+sh -n "$ROOT_DIR/scripts/check-env.sh"
+sh -n "$ROOT_DIR/scripts/render-platform-env.sh"
 
 echo "validation passed"
