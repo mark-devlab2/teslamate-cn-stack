@@ -26,5 +26,5 @@ jobs:
       target: ${{ needs.build_publish.outputs.deploy_target }}
       platform_repo: mark-devlab2/aliyun-deploy-platform
       platform_ref: main
+      remote_platform_dir: /opt/aliyun-deploy-platform-teslamate-cn
     secrets: inherit
-
